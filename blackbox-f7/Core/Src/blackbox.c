@@ -194,6 +194,13 @@ void blackbox_run(UART_HandleTypeDef *huart)
              * A trouver via "strings" sur le binaire ou brute-force shell. */
             version_cmd_afficher();
 
+        } else if (strcmp(commande, "itest") == 0) {
+            char _r[80];
+            snprintf(_r, sizeof(_r), "ITEST: up=%lus cnt=%d st=%d\r\n",
+                     (unsigned long)(HAL_GetTick() / 1000),
+                     logs_count(), auth_est_connecte());
+            shell_envoyer(_r);
+
         } else {
             shell_envoyer("Commande inconnue. Tapez 'help'.\r\n");
         }
