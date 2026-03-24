@@ -16,6 +16,8 @@ Le protocole FWDUMP :
   - lenI    : longueur du message I (1 octet)
   - dataI   : donnees ASCII du message I (lenI octets)
   - EE FF   : marqueur de fin
+
+Exercice pour l'etudiant : completez les parties marquees TODO.
 """
 
 import sys
@@ -93,12 +95,8 @@ def capturer_fwdump(port, baudrate=115200):
         time.sleep(0.5)
 
     # Login d'abord (requis pour fwdump)
-    pin = input("[?] Entrez le PIN pour login : ").strip()
-    envoyer(f"login {pin}")
-    resp = ser.read(ser.in_waiting).decode('utf-8', errors='replace')
-    if "reussie" not in resp.lower() and "connecte" not in resp.lower():
-        print("[ATTENTION] Login peut-etre echoue. Reponse :")
-        print(resp)
+    print("[*] Vous devez etre connecte pour utiliser fwdump.")
+    print("[*] Envoi de fwdump...")
 
     # Envoyer fwdump
     envoyer("fwdump")

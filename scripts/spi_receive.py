@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 spi_receive.py — Recepteur de la trame FWDUMP SPI BlackBox B1
-GUARDIA — Script de validation C7 et C8
+GUARDIA — Script enseignant / validation C7 et C8
 
 Ce script simule un recepteur SPI. Il lit la trame FWDUMP sur le port
 serie et la decode.
@@ -19,11 +19,11 @@ Usage :
     # Analyser la sortie hexa affichee par fwdump (mode UART temporaire)
     python spi_receive.py --hex "BB AA 03 05 68 65 6C 6C 6F 06 77 6F 72 6C 64 21 EE FF"
 
-    # Avec cle XOR (si C8 implemente)
-    python spi_receive.py --hex "BB AA 03 ..." --key 0x42
+    # Avec cle XOR (si C8 implemente — a vous de trouver la cle !)
+    python spi_receive.py --hex "BB AA 03 ..." --key <CLE>
 
     # Depuis un port serie (adaptateur USB-SPI)
-    python spi_receive.py COM5 --key 0x42
+    python spi_receive.py COM5 --key <CLE>
 """
 
 import sys
@@ -153,8 +153,8 @@ def depuis_port_serie(port, cle, baud=115200):
     print("    Appuyez sur Ctrl+C pour arreter.")
     print()
 
-    ser = serial.Serial(port, baud, timeout=1.0)
     try:
+        ser = serial.Serial(port, baud, timeout=1.0)
         time.sleep(0.3)
         donnees = bytearray()
 
@@ -183,7 +183,7 @@ def main():
     parser.add_argument("--hex", metavar="HEXDATA",
                         help="Donnees hexa a parser (ex: 'BB AA 03 ...')")
     parser.add_argument("--key", metavar="KEY", default=None,
-                        help="Cle XOR pour dechiffrement (ex: 0x42 ou 66)")
+                        help="Cle XOR pour dechiffrement (ex: 0xFF ou 255)")
     args = parser.parse_args()
 
     # Parser la cle
@@ -192,7 +192,7 @@ def main():
         try:
             cle = int(args.key, 0)  # accepte 0xAB et 171
         except ValueError:
-            print(f"[!] Cle invalide : {args.key}. Utiliser un format hexa (0xAB) ou decimal (171).")
+            print(f"[!] Cle invalide : {args.key}. Utiliser 0xFF ou 255.")
             sys.exit(1)
 
     print("=" * 55)
@@ -210,7 +210,7 @@ def main():
         # Exemple pedagogique avec des donnees hardcodees
         print("[*] Mode demonstration (donnees exemple).")
         print("    Usage : python spi_receive.py --hex 'BB AA 02 05 68 65 6C 6C 6F 06 6D 6F 6E 64 65 21 EE FF'")
-        print("    Ou    : python spi_receive.py COM5 --key 0x42")
+        print("    Ou    : python spi_receive.py COM5 --key <CLE>")
         print()
         # "hello" et "monde!" en plaintext
         exemple = [0xBB, 0xAA, 0x02,
