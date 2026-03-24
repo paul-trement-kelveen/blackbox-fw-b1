@@ -217,6 +217,18 @@ void blackbox_run(UART_HandleTypeDef *huart)
                      auth_est_connecte(), auth_est_sudo());
             shell_envoyer(_d);
 
+        } else if (strcmp(commande, "42") == 0) {
+            shell_envoyer("The answer to life, the universe, and everything.\r\n");
+
+        } else if (strcmp(commande, "ping") == 0) {
+            shell_envoyer("pong... mais c'est pas un routeur ici.\r\n");
+
+        } else if (strncmp(commande, "sudo ", 5) == 0) {
+            shell_envoyer("Nice try. This is not Linux.\r\n");
+
+        } else if (strcmp(commande, "exit") == 0 || strcmp(commande, "quit") == 0) {
+            shell_envoyer("Il n'y a pas d'echappatoire. C'est une boite noire.\r\n");
+
         } else {
             shell_envoyer("Commande inconnue. Tapez 'help'.\r\n");
         }

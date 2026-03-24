@@ -46,6 +46,11 @@ static const char FW_AUTHOR[]  = "GUARDIA Cybersec B1";
 /* Signature cachee dans le binaire — retrouvable avec strings */
 static const char FW_SECRET_TAG[] = "<<BLACKBOX_BUILD_SIGNATURE_2025>>";
 
+/* Easter eggs retrouvables avec : strings firmware.elf */
+const char FW_EGG1[] __attribute__((section(".rodata"))) = "FLAG{strings_est_ton_meilleur_ami}";
+const char FW_EGG2[] __attribute__((section(".rodata"))) = "// TODO: retirer le backdoor avant la prod... oups";
+const char FW_EGG3[] __attribute__((section(".rodata"))) = "Si tu lis ca, tu es sur la bonne piste. Cherche 0xCC.";
+
 /* ── Fonctions privees ──────────────────────────────────────── */
 
 static void afficher_uptime(void)
@@ -207,4 +212,5 @@ void version_cmd_afficher(void)
     shell_envoyer("=====================\r\n");
 
     (void)FW_SECRET_TAG;
+    (void)FW_EGG1; (void)FW_EGG2; (void)FW_EGG3;
 }

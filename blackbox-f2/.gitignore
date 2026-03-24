@@ -1,0 +1,12 @@
+# Artefacts de compilation — ne pas versionner
+Debug/
+Release/
+*.elf
+*.bin
+*.hex
+*.map
+*.d
+*.o
+*.su
+*.cyclo
+*.bak
