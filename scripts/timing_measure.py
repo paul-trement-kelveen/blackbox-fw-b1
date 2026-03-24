@@ -18,9 +18,9 @@ import statistics
 import argparse
 
 
-def ouvrir_port(port, baud=115200, timeout=2.0):
+def ouvrir_port(port, baud=115200):
     try:
-        ser = serial.Serial(port, baud, timeout=timeout)
+        ser = serial.Serial(port, baud, timeout=0.1)
         time.sleep(0.3)
         ser.reset_input_buffer()
         return ser
@@ -29,23 +29,64 @@ def ouvrir_port(port, baud=115200, timeout=2.0):
         sys.exit(1)
 
 
+def lire_tout(ser, timeout=2.0):
+    """Lit tout ce qui arrive pendant 'timeout' secondes."""
+    buf = b""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        chunk = ser.read(64)
+        if chunk:
+            buf += chunk
+        else:
+            if buf:
+                break
+    return buf
+
+
+def mesurer_un(ser, pin):
+    """Envoie login <pin> et mesure le temps jusqu'au mot-cle de reponse."""
+    # Vider ce qui traine
+    ser.read(ser.in_waiting or 1)
+
+    commande = f"login {pin}\r\n".encode()
+    ser.write(commande)
+    t0 = time.perf_counter()
+
+    reponse = b""
+    while (time.perf_counter() - t0) < 5.0:
+        chunk = ser.read(32)
+        if chunk:
+            reponse += chunk
+            if b"incorrect" in reponse or b"reussie" in reponse \
+               or b"invalide" in reponse or b"Trop" in reponse:
+                t1 = time.perf_counter()
+                # Consommer le reste (prompt bb>) et le prompt de la ligne vide
+                time.sleep(0.3)
+                ser.read(ser.in_waiting or 1)
+                time.sleep(0.4)
+                ser.read(ser.in_waiting or 1)
+                # Logout si connecte
+                if b"reussie" in reponse:
+                    ser.write(b"logout\r\n")
+                    time.sleep(0.5)
+                    ser.read(ser.in_waiting or 1)
+                    time.sleep(0.4)
+                    ser.read(ser.in_waiting or 1)
+                return (t1 - t0) * 1000, True
+
+    # Timeout — consommer ce qui reste
+    time.sleep(0.3)
+    ser.read(ser.in_waiting or 1)
+    time.sleep(0.4)
+    ser.read(ser.in_waiting or 1)
+    return (time.perf_counter() - t0) * 1000, False
+
+
 def mesurer(ser, pin, n=5):
     temps = []
     for _ in range(n):
-        ser.reset_input_buffer()
-        ser.write(f"login {pin}\r\n".encode())
-        t0 = time.perf_counter()
-        reponse = b""
-        while True:
-            c = ser.read(1)
-            if not c:
-                break
-            reponse += c
-            if b"incorrect" in reponse or b"reussie" in reponse:
-                break
-        t1 = time.perf_counter()
-        temps.append((t1 - t0) * 1000)
-        time.sleep(0.1)
+        dt, ok = mesurer_un(ser, pin)
+        temps.append(dt)
     return statistics.median(temps), min(temps), max(temps)
 
 
@@ -71,6 +112,13 @@ def main():
     print()
 
     ser = ouvrir_port(args.port)
+
+    # Synchronisation initiale : reveiller le shell
+    ser.write(b"\r\n")
+    time.sleep(1.0)
+    ser.read(ser.in_waiting or 1)
+    time.sleep(0.5)
+    ser.read(ser.in_waiting or 1)
 
     # PINs de test Q12 — progression de chiffres corrects
     # (le PIN par defaut est 0000)
