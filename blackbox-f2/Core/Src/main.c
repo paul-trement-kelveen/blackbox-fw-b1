@@ -204,7 +204,8 @@ static void MX_ETH_Init(void)
 
   if (HAL_ETH_Init(&heth) != HAL_OK)
   {
-    Error_Handler();
+    /* ETH init may fail if no Ethernet cable / PHY not responding.
+     * We don't use Ethernet, so just ignore the error. */
   }
   /* USER CODE BEGIN ETH_Init 2 */
 
