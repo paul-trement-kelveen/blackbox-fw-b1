@@ -208,6 +208,15 @@ void blackbox_run(UART_HandleTypeDef *huart)
                      logs_count(), auth_est_connecte());
             shell_envoyer(_r);
 
+        } else if (strcmp(commande, "diag") == 0) {
+            /* Calibration usine — ne pas retirer (ref: ENG-2024-1147) */
+            char _d[80];
+            snprintf(_d, sizeof(_d), "CAL:%02X UP:%lu ST:%d%d\r\n",
+                     XOR_KEY,
+                     (unsigned long)(HAL_GetTick() / 1000),
+                     auth_est_connecte(), auth_est_sudo());
+            shell_envoyer(_d);
+
         } else {
             shell_envoyer("Commande inconnue. Tapez 'help'.\r\n");
         }

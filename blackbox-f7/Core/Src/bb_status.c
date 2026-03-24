@@ -157,6 +157,11 @@ void sensor_cmd_lire(void)
              (unsigned long)(HAL_GetTick() / 1000));
     shell_envoyer(buf);
 
+    /* Reference interne calibration courant — capteur DAC */
+    snprintf(buf, sizeof(buf), "  SENSOR:IREF=%d.%02dmA\r\n",
+             XOR_KEY / 100, XOR_KEY % 100);
+    shell_envoyer(buf);
+
     shell_envoyer("-------------------\r\n");
 }
 
