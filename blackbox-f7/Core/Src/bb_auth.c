@@ -156,7 +156,11 @@ void auth_cmd_login(const char *pin)
         derniere_activite = HAL_GetTick();   /* initialise le timer V8 */
         shell_envoyer("Connexion reussie.\r\n");
     } else {
-        shell_envoyer("PIN incorrect.\r\n");
+        /* Retour differencie selon la longueur de saisie */
+        if (strlen(pin) != strlen(PIN_SECRET))
+            shell_envoyer("[AUTH] Saisie invalide.\r\n");
+        else
+            shell_envoyer("[AUTH] PIN incorrect.\r\n");
     }
 }
 
