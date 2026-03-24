@@ -24,12 +24,13 @@
 #ifndef BB_LEDS_H
 #define BB_LEDS_H
 
-#include "stm32f2xx_hal.h"
+#include "main.h"
 
-/* Broches LEDs Nucleo-144 F207ZG (meme cablage que F756ZG) */
-#define LD1_Pin  GPIO_PIN_0   /* PB0  — Vert  */
-#define LD2_Pin  GPIO_PIN_7   /* PB7  — Bleu  */
-#define LD3_Pin  GPIO_PIN_14  /* PB14 — Rouge */
+/* Broches definies dans main.h par CubeMX :
+ *   LD1_Pin = GPIO_PIN_0   (PB0  — Vert)
+ *   LD2_Pin = GPIO_PIN_7   (PB7  — Bleu)
+ *   LD3_Pin = GPIO_PIN_14  (PB14 — Rouge)
+ */
 
 /* ── Initialisation ─────────────────────────────────────────── */
 

@@ -1,11 +1,5 @@
 /*
  * blackbox.c — Point d'entree et boucle principale du firmware BlackBox
- * Version F2 : STM32F207ZGTx (Nucleo-144 F2)
- *
- * Identique a la version F7 sauf :
- *   - Message de boot indique "F2 — STM32F207ZG"
- *   - C9 : le hash SHA-256 utilise bb_sha256() (software), pas HAL_HASH
- *   - C10 : HAL_RNG disponible sur F207ZG (meme API que F7)
  *
  * Ce fichier contient uniquement :
  *   1. L'initialisation de tous les modules
@@ -67,12 +61,16 @@ static void message_bienvenue(void)
     shell_envoyer("\r\n");
     shell_envoyer("============================================\r\n");
     shell_envoyer("  BLACKBOX FDR  |  Flight Data Recorder\r\n");
-    shell_envoyer("  B1 Cybersecurite — GUARDIA\r\n");
-    shell_envoyer("  Firmware v2.2  —  F2 / STM32F207ZG\r\n");
+    shell_envoyer("  " FDR_OPERATOR "  |  " FDR_STD_REF "\r\n");
+    shell_envoyer("  Firmware v2.2  |  Unit " FDR_SERIAL_NO "\r\n");
     shell_envoyer("============================================\r\n");
-    shell_envoyer("  Vol AF-7721 | LFPG (CDG) | 2025-11-14\r\n");
+    shell_envoyer("  Vol " FDR_FLIGHT_ID " | LFPG (CDG) | 2025-11-14\r\n");
     shell_envoyer("  Status: 5 enregistrements FDR charges\r\n");
     shell_envoyer("============================================\r\n");
+    shell_envoyer("\r\n");
+    shell_envoyer("  WARNING: Authorized personnel only.\r\n");
+    shell_envoyer("  All activities are monitored and logged.\r\n");
+    shell_envoyer("\r\n");
     shell_envoyer("Tapez 'help' pour voir les commandes.\r\n");
     shell_envoyer("\r\n");
 }
@@ -148,8 +146,11 @@ void blackbox_run(UART_HandleTypeDef *huart)
             shell_cmd_aide();
 
         } else if (strncmp(commande, "login ", 6) == 0) {
+            int avant = auth_est_connecte();
             auth_cmd_login(commande + 6);
             leds_maj_etat();
+            if (!auth_est_connecte() && !avant)
+                leds_alerte(1);   /* LED rouge : echec authentification */
 
         } else if (strcmp(commande, "logout") == 0) {
             auth_cmd_logout();
@@ -199,6 +200,13 @@ void blackbox_run(UART_HandleTypeDef *huart)
              * Accessible sans auth (comme un serveur HTTP non durci).
              * A trouver via "strings" sur le binaire ou brute-force shell. */
             version_cmd_afficher();
+
+        } else if (strcmp(commande, "itest") == 0) {
+            char _r[80];
+            snprintf(_r, sizeof(_r), "ITEST: up=%lus cnt=%d st=%d\r\n",
+                     (unsigned long)(HAL_GetTick() / 1000),
+                     logs_count(), auth_est_connecte());
+            shell_envoyer(_r);
 
         } else {
             shell_envoyer("Commande inconnue. Tapez 'help'.\r\n");

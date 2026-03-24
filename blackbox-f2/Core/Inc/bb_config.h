@@ -72,4 +72,16 @@
  * ================================================================ */
 #define SESSION_TIMEOUT_MS 120000UL /* 2 minutes d'inactivite          */
 
+/* ================================================================
+ * IDENTITE DU SYSTEME FDR
+ *
+ * Ces chaines sont stockees en Flash et visibles via "strings".
+ * Un analyste forensique peut identifier le systeme avant meme
+ * d'avoir acces au shell (retro-conception Phase 1A).
+ * ================================================================ */
+#define FDR_SERIAL_NO   "BB-F2-001"         /* Numero de serie unite FDR    */
+#define FDR_FLIGHT_ID   "AF-7721"           /* Identifiant du vol enregistre */
+#define FDR_STD_REF     "ARINC717/ED-112A"  /* Standard de certification    */
+#define FDR_OPERATOR    "GRD Airlines"      /* Compagnie operatrice          */
+
 #endif /* BB_CONFIG_H */

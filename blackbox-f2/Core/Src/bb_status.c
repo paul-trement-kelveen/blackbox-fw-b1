@@ -1,10 +1,5 @@
 /*
  * bb_status.c — Commandes d'information systeme
- * Version F2 : STM32F207ZGTx (Nucleo-144 F2)
- *
- * Identique a la version F7 sauf :
- *   - FW_TARGET = "STM32F207ZG"
- *   - FW_CPU    = "Cortex-M3 @ 120 MHz"
  *
  * Ce module fournit trois commandes pour visualiser l'etat du systeme :
  *
@@ -32,12 +27,11 @@
 #include "bb_config.h"
 #include <stdio.h>
 #include <string.h>
-
 /* Peripherique RNG pour generer des donnees de capteur pseudo-realistes */
 extern RNG_HandleTypeDef hrng;
 
 /* ── Chaines de version ──────────────────────────────────────
- * Visibles avec "strings blackbox-f2.elf | grep -i version"
+ * Visibles avec "strings blackbox-f7.elf | grep -i version"
  * Les etudiants peuvent retrouver ces informations dans le binaire
  * AVANT d'avoir le code source (Phase 1A — retro-conception).
  * ──────────────────────────────────────────────────────────── */
@@ -75,38 +69,43 @@ void status_cmd_afficher(void)
 {
     char buf[96];
 
-    shell_envoyer("--- STATUS ---\r\n");
+    shell_envoyer("--- STATUS " FDR_SERIAL_NO " ---\r\n");
 
     /* Uptime toujours visible */
     afficher_uptime();
 
-    if (!auth_est_connecte()) {
-        shell_envoyer("  (connectez-vous pour plus d'infos)\r\n");
-        shell_envoyer("--------------\r\n");
-        return;
-    }
-
-    /* Logs */
-    snprintf(buf, sizeof(buf), "  Logs      : %d / %d\r\n",
+    /* Nombre d'enregistrements — visible sans authentification
+     * (monitoring externe, affichage cockpit) */
+    snprintf(buf, sizeof(buf), "  FDR       : %d enreg. / %d max\r\n",
              logs_count(), MAX_LOGS);
     shell_envoyer(buf);
+
+    if (!auth_est_connecte()) {
+        shell_envoyer("  Auth      : non connecte\r\n");
+        shell_envoyer("  (connectez-vous pour plus d'infos)\r\n");
+        shell_envoyer("---------------------\r\n");
+        return;
+    }
 
     /* Etat auth */
     if (auth_est_sudo())
         shell_envoyer("  Auth      : SUDO\r\n");
     else
-        shell_envoyer("  Auth      : connecte\r\n");
+        shell_envoyer("  Auth      : CREW\r\n");
 
     /* Version courte */
     snprintf(buf, sizeof(buf), "  Firmware  : %s %s\r\n", FW_NAME, FW_VERSION);
     shell_envoyer(buf);
 
     /* Memoire */
-    snprintf(buf, sizeof(buf), "  RAM logs  : %d octets / %d max\r\n",
+    snprintf(buf, sizeof(buf), "  RAM logs  : %d o / %d max\r\n",
              logs_count() * LOG_SIZE, MAX_LOGS * LOG_SIZE);
     shell_envoyer(buf);
 
-    shell_envoyer("--------------\r\n");
+    /* Standard */
+    shell_envoyer("  Standard  : " FDR_STD_REF "\r\n");
+
+    shell_envoyer("---------------------\r\n");
 }
 
 void sensor_cmd_lire(void)
@@ -163,15 +162,6 @@ void sensor_cmd_lire(void)
 
 void version_cmd_afficher(void)
 {
-    /* Commande NON DOCUMENTEE dans le help.
-     * Les etudiants doivent la trouver par :
-     *   1. "strings blackbox-f2.elf" — voir les chaines de version
-     *   2. Brute-force du shell (essayer des mots courants)
-     *   3. Reverse du dispatcher dans blackbox.c
-     *
-     * Accessible SANS authentification (fuite d'information volontaire).
-     * Similaire a la banniere d'un serveur HTTP non durci. */
-
     char buf[96];
 
     shell_envoyer("=== FIRMWARE INFO ===\r\n");
@@ -191,20 +181,25 @@ void version_cmd_afficher(void)
     snprintf(buf, sizeof(buf), "  CPU     : %s\r\n", FW_CPU);
     shell_envoyer(buf);
 
+    snprintf(buf, sizeof(buf), "  Unit    : %s\r\n", FDR_SERIAL_NO);
+    shell_envoyer(buf);
+
+    snprintf(buf, sizeof(buf), "  Std     : %s\r\n", FDR_STD_REF);
+    shell_envoyer(buf);
+
     snprintf(buf, sizeof(buf), "  Author  : %s\r\n", FW_AUTHOR);
     shell_envoyer(buf);
 
     /* Memoire */
-    snprintf(buf, sizeof(buf), "  Log RAM : %d x %d = %d octets\r\n",
+    snprintf(buf, sizeof(buf), "  Log RAM : %d x %d = %d o\r\n",
              MAX_LOGS, LOG_SIZE, MAX_LOGS * LOG_SIZE);
     shell_envoyer(buf);
 
-    snprintf(buf, sizeof(buf), "  Histori : %d x %d = %d octets\r\n",
+    snprintf(buf, sizeof(buf), "  History : %d x %d = %d o\r\n",
              MAX_HISTORY, CMD_SIZE, MAX_HISTORY * CMD_SIZE);
     shell_envoyer(buf);
 
     shell_envoyer("=====================\r\n");
 
-    /* Force la reference pour que le linker ne supprime pas la chaine */
     (void)FW_SECRET_TAG;
 }

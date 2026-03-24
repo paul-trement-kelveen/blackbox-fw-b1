@@ -64,7 +64,7 @@ void shell_lire_ligne(char *buf, int max)
     int     i = 0;
     uint8_t c;
 
-    while (i < max - 1) {
+    while (i < max) {
         HAL_UART_Receive(uart_handle, &c, 1, HAL_MAX_DELAY);
 
         /* VH2 : echo systematique de chaque caractere, y compris le PIN.

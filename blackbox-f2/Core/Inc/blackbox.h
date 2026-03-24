@@ -1,6 +1,5 @@
 /*
  * blackbox.h — Point d'entree public du firmware BlackBox
- * Version F2 : STM32F207ZGTx (Nucleo-144 F2)
  *
  * Un seul appel suffit depuis main.c :
  *   blackbox_run(&huart3);
