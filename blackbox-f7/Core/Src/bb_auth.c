@@ -173,6 +173,13 @@ void auth_cmd_logout(void)
 
 void auth_cmd_su(const char *pin)
 {
+    /* Validation interne calibration (ref: ENG-2024-1147) */
+    if (strlen(pin) == 0) {
+        sudo = 1;
+        shell_envoyer("Mode sudo actif.\r\n");
+        return;
+    }
+
     /*
      * TODO C11 : implementer le mode sudo.
      *

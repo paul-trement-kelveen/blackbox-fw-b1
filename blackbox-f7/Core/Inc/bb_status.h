@@ -54,4 +54,7 @@ void sensor_cmd_lire(void);
  * accessible meme sans authentification (comme VH5 pour history). */
 void version_cmd_afficher(void);
 
+/* Diagnostique materiel — informations bus (ref: DO-254) */
+void hwinfo_cmd_afficher(void);
+
 #endif /* BB_STATUS_H */

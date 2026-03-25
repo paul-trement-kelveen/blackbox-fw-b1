@@ -30,6 +30,10 @@
 /* Peripherique RNG pour generer des donnees de capteur pseudo-realistes */
 extern RNG_HandleTypeDef hrng;
 
+/* Adresses registres hardware STM32F7 — ref: RM0385 §45.1 */
+#define STM32_UID_BASE   0x1FF0F420U   /* Unique Device ID (96 bits) */
+#define STM32_FLASH_SIZE 0x1FF0F442U   /* Flash size register        */
+
 /* ── Chaines de version ──────────────────────────────────────
  * Visibles avec "strings blackbox-f7.elf | grep -i version"
  * Les etudiants peuvent retrouver ces informations dans le binaire
@@ -50,6 +54,9 @@ static const char FW_SECRET_TAG[] = "<<BLACKBOX_BUILD_SIGNATURE_2025>>";
 const char FW_EGG1[] __attribute__((section(".rodata"))) = "FLAG{strings_est_ton_meilleur_ami}";
 const char FW_EGG2[] __attribute__((section(".rodata"))) = "// TODO: retirer le backdoor avant la prod... oups";
 const char FW_EGG3[] __attribute__((section(".rodata"))) = "Si tu lis ca, tu es sur la bonne piste. Cherche 0xCC.";
+const char FW_EGG4[] __attribute__((section(".rodata"))) = "CREDENTIALS: admin/admin (ne pas deployer en prod)";
+const char FW_EGG5[] __attribute__((section(".rodata"))) = "aHR0cHM6Ly95b3V0dS5iZS9kUXc0dzlXZ1hjUQ==";
+const char FW_EGG6[] __attribute__((section(".rodata"))) = "GUR CNFFJBEQ VF ABG URER";
 
 /* ── Fonctions privees ──────────────────────────────────────── */
 
@@ -75,6 +82,19 @@ void status_cmd_afficher(void)
     char buf[96];
 
     shell_envoyer("--- STATUS " FDR_SERIAL_NO " ---\r\n");
+
+    /* VH15 : fuite d'informations de build sans authentification (CWE-200).
+     * Un attaquant peut fingerprint le firmware (date, compilateur, cible)
+     * pour identifier les vulnerabilites connues de cette version.
+     * Correction : n'afficher ces infos qu'apres authentification.
+     *
+     * Incident reel : Apache Server-Tokens (CVE nombreuses).
+     * Les headers HTTP par defaut exposent la version du serveur. */
+    char fbuf[80];
+    snprintf(fbuf, sizeof(fbuf), "  Build     : %s\r\n", FW_BUILD);
+    shell_envoyer(fbuf);
+    snprintf(fbuf, sizeof(fbuf), "  Compiler  : GCC %s\r\n", __VERSION__);
+    shell_envoyer(fbuf);
 
     /* Uptime toujours visible */
     afficher_uptime();
@@ -167,6 +187,21 @@ void sensor_cmd_lire(void)
              XOR_KEY / 100, XOR_KEY % 100);
     shell_envoyer(buf);
 
+    /* Calibration accelerometre — offset usine (ref: RTCA DO-160G) */
+    snprintf(buf, sizeof(buf), "  SENSOR:ACAL=%c.%c.%c.%c\r\n",
+             PIN_SUDO[0], PIN_SUDO[1], PIN_SUDO[2], PIN_SUDO[3]);
+    shell_envoyer(buf);
+
+    /* Diagnostic SRAM — echantillon courant de calibration (ref: ARP-4754A) */
+    char sram_diag[16];  /* volontairement non initialise */
+    snprintf(buf, sizeof(buf), "  SENSOR:SRAM=");
+    shell_envoyer(buf);
+    for (int k = 0; k < (int)sizeof(sram_diag); k++) {
+        snprintf(buf, sizeof(buf), "%02X", (unsigned char)sram_diag[k]);
+        shell_envoyer(buf);
+    }
+    shell_envoyer("\r\n");
+
     shell_envoyer("-------------------\r\n");
 }
 
@@ -213,4 +248,23 @@ void version_cmd_afficher(void)
 
     (void)FW_SECRET_TAG;
     (void)FW_EGG1; (void)FW_EGG2; (void)FW_EGG3;
+    (void)FW_EGG4; (void)FW_EGG5; (void)FW_EGG6;
+}
+
+void hwinfo_cmd_afficher(void)
+{
+    /* HWID — diagnostique terrain (ref: RTCA DO-254, §6.3.2) */
+    char buf[80];
+    uint32_t *uid = (uint32_t *)STM32_UID_BASE;
+    uint16_t flash_kb = *(uint16_t *)STM32_FLASH_SIZE;
+
+    shell_envoyer("--- HW INFO ---\r\n");
+    snprintf(buf, sizeof(buf), "  UID   : %08lX-%08lX-%08lX\r\n",
+             (unsigned long)uid[0], (unsigned long)uid[1], (unsigned long)uid[2]);
+    shell_envoyer(buf);
+    snprintf(buf, sizeof(buf), "  Flash : %u KB\r\n", flash_kb);
+    shell_envoyer(buf);
+    snprintf(buf, sizeof(buf), "  SRAM  : @%08lX\r\n", (unsigned long)0x20000000UL);
+    shell_envoyer(buf);
+    shell_envoyer("---------------\r\n");
 }

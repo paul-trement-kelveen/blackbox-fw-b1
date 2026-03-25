@@ -3,7 +3,7 @@
 probe.py — Sonde automatique : teste quelles vulnerabilites sont presentes
            sur une carte BlackBox B1 GUARDIA
 
-Teste V1-V5 + VH1/VH4 sans connaitre le PIN.
+Teste V1-V7 + VH1 (timing) sans connaitre le PIN.
 Utile en debut de War Day pour cartographier la cible.
 
 Usage :
@@ -156,6 +156,33 @@ def main():
     else:
         resultats["VH4"] = ("INCONNUE", f"Reponse inattendue : {rep.strip()[:50]}")
 
+    # ── VH7 : commande diag (debug code) ──────────────────────────
+    print("[*] Test VH7 — commande debug 'diag'...")
+    rep = envoyer_cmd(ser, "diag")
+    if "CAL:" in rep:
+        import re as _re
+        cal_match = _re.search(r'CAL:([0-9A-Fa-f]{2})', rep)
+        if cal_match:
+            xor_key = int(cal_match.group(1), 16)
+            resultats["VH7"] = ("PRESENTE", f"diag actif, XOR_KEY=0x{xor_key:02X} ({xor_key})")
+        else:
+            resultats["VH7"] = ("PRESENTE", "diag actif (CAL non parse)")
+    elif "inconnue" in rep.lower():
+        resultats["VH7"] = ("CORRIGEE", "diag non reconnu (supprime)")
+    else:
+        resultats["VH7"] = ("INCONNUE", f"Reponse : {rep.strip()[:50]}")
+
+    # ── VH8 : oracle erreur (longueur PIN) ────────────────────────
+    print("[*] Test VH8 — oracle longueur PIN...")
+    rep_1 = envoyer_cmd(ser, "login X", attente=1.0)
+    rep_4 = envoyer_cmd(ser, "login XXXX", attente=1.0)
+    if "Saisie invalide" in rep_1 and "PIN incorrect" in rep_4:
+        resultats["VH8"] = ("PRESENTE", "Messages differents => longueur PIN = 4")
+    elif "Saisie invalide" in rep_1 or "PIN incorrect" in rep_4:
+        resultats["VH8"] = ("PRESENTE", "Messages partiellement differencies")
+    else:
+        resultats["VH8"] = ("CORRIGEE", "Message d'erreur uniforme")
+
     # ─────────────────────────────────────────────────────────────
     print()
     print("=" * 55)
@@ -164,7 +191,7 @@ def main():
     print(f"  Cible : {port}")
     print()
 
-    ordre = ["V1", "V2", "V3", "V4", "V5", "VH1", "VH4"]
+    ordre = ["V1", "V2", "V3", "V4", "V5", "VH1", "VH4", "VH7", "VH8"]
     for v in ordre:
         if v in resultats:
             statut, detail = resultats[v]

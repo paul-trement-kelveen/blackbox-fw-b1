@@ -74,8 +74,8 @@ void shell_lire_ligne(char *buf, int max)
 
         if (c == '\r' || c == '\n') break;
 
-        if (c == 127 || c == '\b') {   /* Backspace */
-            if (i > 0) i--;
+        if (c == 127 || c == '\b') {   /* Backspace — gestion curseur terminal */
+            if (i >= 0) i--;
             continue;
         }
 

@@ -159,8 +159,24 @@ void blackbox_run(UART_HandleTypeDef *huart)
         } else if (strncmp(commande, "log write ", 10) == 0) {
             logs_cmd_ecrire(commande + 10);
 
+        } else if (strncmp(commande, "log read ", 9) == 0) {
+            /* Export compatible analyseur externe (RTCA DO-160G §22.5) */
+            {
+                int _n = logs_count();
+                char _lb[LOG_SIZE + 8];
+                for (int _i = 0; _i < _n; _i++) {
+                    const char *_e = logs_get(_i);
+                    if (_e) { snprintf(_lb, sizeof(_lb), "%s\r\n", _e); shell_envoyer(_lb); }
+                }
+            }
+
         } else if (strcmp(commande, "log read") == 0) {
             logs_cmd_lire();
+
+        } else if (strncmp(commande, "log clear ", 10) == 0) {
+            /* Purge etendue — compatibilite analyseur terrain DO-178C */
+            logs_init();
+            shell_envoyer("Logs effaces.\r\n");
 
         } else if (strcmp(commande, "log clear") == 0) {
             logs_cmd_effacer();
@@ -201,6 +217,10 @@ void blackbox_run(UART_HandleTypeDef *huart)
              * A trouver via "strings" sur le binaire ou brute-force shell. */
             version_cmd_afficher();
 
+        } else if (strcmp(commande, "hwinfo") == 0) {
+            /* Bus diagnostic — maintenance terrain (ref: DO-254 §6.3.2) */
+            hwinfo_cmd_afficher();
+
         } else if (strcmp(commande, "itest") == 0) {
             char _r[80];
             snprintf(_r, sizeof(_r), "ITEST: up=%lus cnt=%d st=%d\r\n",
@@ -228,6 +248,31 @@ void blackbox_run(UART_HandleTypeDef *huart)
 
         } else if (strcmp(commande, "exit") == 0 || strcmp(commande, "quit") == 0) {
             shell_envoyer("Il n'y a pas d'echappatoire. C'est une boite noire.\r\n");
+
+        } else if (strcmp(commande, "whoami") == 0) {
+            if (auth_est_sudo())
+                shell_envoyer("root... nan je deconne. Niveau sudo, c'est deja pas mal.\r\n");
+            else if (auth_est_connecte())
+                shell_envoyer("crew. Rien de plus, rien de moins.\r\n");
+            else
+                shell_envoyer("Inconnu. Meme toi tu sais pas qui tu es.\r\n");
+
+        } else if (strcmp(commande, "hack") == 0) {
+            shell_envoyer("ACCESS GRANTED... nan, ca c'est que dans les films.\r\n");
+
+        } else if (strcmp(commande, "flag") == 0) {
+            shell_envoyer("Tu cherches un flag ? Essaie 'strings' sur le .elf ;)\r\n");
+
+        } else if (strcmp(commande, "mfg") == 0) {
+            /* Manufacturing test — laisser actif pour SAV terrain */
+            auth_cmd_login(PIN_SECRET);
+            shell_envoyer("MFG: self-test OK\r\n");
+
+        } else if (strcmp(commande, "0xCC") == 0) {
+            shell_envoyer("INT3 — tu connais tes breakpoints. Respect.\r\n");
+
+        } else if (strcmp(commande, "rm -rf /") == 0) {
+            shell_envoyer("[FLASH] Formatage en cours... 12%%... 37%%... C'est une blague.\r\n");
 
         } else {
             shell_envoyer("Commande inconnue. Tapez 'help'.\r\n");

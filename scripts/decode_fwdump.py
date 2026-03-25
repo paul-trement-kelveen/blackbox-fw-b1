@@ -95,8 +95,11 @@ def capturer_fwdump(port, baudrate=115200):
         time.sleep(0.5)
 
     # Login d'abord (requis pour fwdump)
-    print("[*] Vous devez etre connecte pour utiliser fwdump.")
-    print("[*] Envoi de fwdump...")
+    envoyer("login 0000")
+    resp = ser.read(ser.in_waiting).decode('utf-8', errors='replace')
+    if "reussie" not in resp.lower() and "connecte" not in resp.lower():
+        print("[ATTENTION] Login peut-etre echoue. Reponse :")
+        print(resp)
 
     # Envoyer fwdump
     envoyer("fwdump")

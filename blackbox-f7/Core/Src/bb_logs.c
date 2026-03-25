@@ -7,6 +7,7 @@
  *   V4 — logs_cmd_lire() ne verifie pas auth_est_connecte()
  *   V5 — logs_cmd_effacer() ne fait que nb_logs = 0 (pas de memset)
  *   V6 — les messages sont stockes en clair (pas de XOR)
+ *   VH12 — logs_cmd_lire() utilise le message comme format string (CWE-134)
  *
  * ┌─────────────────────────────────────────────────────────────┐
  * │ EXERCICE DEBUGGER — V5 (Phase 1, section 3b)                │
@@ -91,11 +92,25 @@ void logs_cmd_lire(void)
     }
 
     char ligne[LOG_SIZE + 16];
+    char prefixe[16];
     for (int i = 0; i < nb_logs; i++) {
         /* VULNERABILITE V6 : affichage en clair.
-         * Correction C6 : dechiffrer avec XOR avant affichage. */
-        snprintf(ligne, sizeof(ligne), "[%d] %s\r\n", i + 1, logs[i]);
+         * Correction C6 : dechiffrer avec XOR avant affichage.
+         *
+         * VULNERABILITE VH12 : le message est passe comme format string.
+         * Si un log contient "%x", snprintf l'interprete et fuit la stack.
+         *
+         * Essayez : log write %x.%x.%x.%x
+         *           log read → affiche des adresses memoire !
+         *
+         * Correction C_fmtstr : utiliser "%s" :
+         *   snprintf(ligne, sizeof(ligne), "[%d] %s\r\n", i + 1, logs[i]);
+         */
+        snprintf(prefixe, sizeof(prefixe), "[%d] ", i + 1);
+        shell_envoyer(prefixe);
+        snprintf(ligne, sizeof(ligne), logs[i]);
         shell_envoyer(ligne);
+        shell_envoyer("\r\n");
     }
 }
 

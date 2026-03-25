@@ -91,6 +91,8 @@ static void envoyer_trame_debut(uint8_t nb)
 {
     envoyer_octet_spi(TRAME_DEBUT_0);
     envoyer_octet_spi(TRAME_DEBUT_1);
+    envoyer_octet_spi(0x01);           /* protocol version          */
+    envoyer_octet_spi(XOR_KEY);        /* cipher suite identifier   */
     envoyer_octet_spi(nb);
 }
 
